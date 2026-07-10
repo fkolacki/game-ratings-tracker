@@ -15,7 +15,7 @@ This is my first project going up on GitHub. Before this, I built something simi
 
 ## Stack
 
-Python, FastAPI, SQLAlchemy, SQLite, Pydantic, JWT (python-jose), bcrypt (passlib), httpx for the RAWG requests, pydantic-settings for config. Also packaged with Docker.
+Python, FastAPI, SQLAlchemy, PostgreSQL, Pydantic, JWT (python-jose), bcrypt (passlib), httpx for the RAWG requests, pydantic-settings for config. Running with Docker Compose.
 
 ## How the data is structured
 
@@ -25,38 +25,28 @@ Three tables. `User` and `Game` are pretty standard, but `UserGame` is the inter
 User <  UserGame  > Game
 ```
 
-## Running it locally
-
-```bash
-git clone https://github.com/fkolacki/game-ratings-tracker.git
-cd game-ratings-tracker
-python -m venv venv
-venv\Scripts\Activate.ps1   # or source venv/bin/activate on Mac/Linux
-pip install -r requirements.txt
-```
+## Running it with Docker
 
 You'll need a `.env` file with:
 ```
 SECRET_KEY=your_own_random_secret
 RAWG_API_KEY=your_rawg_api_key
-DATABASE_URL=sqlite:///./game_tracker.db
+DATABASE_URL=postgresql://your_postgres_user:your_postgres_password@db:5432/your_postgres_db
+POSTGRES_DB=your_postgres_db
+POSTGRES_USER=your_postgres_user
+POSTGRES_PASSWORD=your_postgres_password
 ```
 
 (RAWG API keys are free, get one [here](https://rawg.io/apidocs).)
 
-Then:
 ```bash
-uvicorn main:app --reload
+git clone https://github.com/fkolacki/game-ratings-tracker.git
+cd game-ratings-tracker
+docker compose up --build
 ```
 
-Docs at `http://127.0.0.1:8000/docs`.
+Docs at `http://localhost:8000/docs`.
 
-## Running it with Docker
-
-```bash
-docker build -t game-ratings-tracker .
-docker run -p 8000:8000 --env-file .env game-ratings-tracker
-```
 
 ## Endpoints
 
