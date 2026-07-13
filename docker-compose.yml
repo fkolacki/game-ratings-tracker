@@ -12,7 +12,9 @@ services:
       timeout: 3s
       retries: 3
   app:
-    build: .
+    build:
+      context: .
+      target: dev
     ports:
       - "8000:8000"
     env_file: .env
