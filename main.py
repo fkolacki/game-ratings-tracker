@@ -62,8 +62,8 @@ def add_game_to_list(game_id: int, user_game_in: schemas.UserGameCreate, current
     return new_user_game
 
 @app.get("/me/games/", response_model = List[schemas.UserGameOut])
-def my_list(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
-    my_games = db.query(models.UserGame).filter(models.UserGame.user_id == current_user.id).all()
+def my_list(skip: int=0, limit: int=20, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    my_games = db.query(models.UserGame).filter(models.UserGame.user_id == current_user.id).offset(skip).limit(limit).all()
     return my_games
 
 @app.patch("/me/games/{game_id}/", response_model = schemas.UserGameOut)
@@ -79,7 +79,7 @@ def update_user_game(game_id: int, updates: schemas.UserGameUpdate, current_user
     return user_game_entry
 
 @app.get("/games/", response_model = List[schemas.GameOut])
-def get_games(genre: Optional[str] = None, min_rating: Optional[float] = None, year: Optional[str] = None, db: Session = Depends(get_db)):
+def get_games(genre: Optional[str] = None, min_rating: Optional[float] = None, year: Optional[str] = None, skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
     query = db.query(models.Game)
     if genre:
         query = query.filter(models.Game.genre.like(f"%{genre}%"))
@@ -87,7 +87,7 @@ def get_games(genre: Optional[str] = None, min_rating: Optional[float] = None, y
         query = query.filter(models.Game.rawg_rating >= min_rating)
     if year:
         query = query.filter(models.Game.release_date.like(f"{year}%"))
-    return query.all()
+    return query.offset(skip).limit(limit).all()
 
 @app.get("/me/stats/")
 def my_stats (current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
