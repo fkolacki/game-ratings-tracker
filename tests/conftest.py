@@ -34,3 +34,10 @@ def fake_fetch_games_multiple():
                   {"id": 2, "name": "test_game2",  "genres": [{"name": "Sports"}, {"name": "Adventure"}], "released": "2025-05-05", "rating": 4.4}]
     test_data = {"results": test_games}
     return test_data
+
+@pytest.fixture
+def auth_headers(client):
+    client.post("/register/", json={"email": "a@a.com", "password": "password1"})
+    user_login = client.post("/login/", data={"username": "a@a.com", "password": "password1"})
+    test_token = user_login.json()["access_token"]
+    return {"Authorization": f"Bearer {test_token}"}
