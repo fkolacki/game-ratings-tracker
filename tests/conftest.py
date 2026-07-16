@@ -19,3 +19,18 @@ def clean_db():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
+
+def fake_fetch_games():
+    test_game = {"id": 1, "name": "test_game",  "genres": [{"name": "Action"}, {"name": "RPG"}], "released": "2024-04-04", "rating": 4.5}
+    test_data = {"results": [test_game]}
+    return test_data
+
+@pytest.fixture
+def mock_rawg_response(monkeypatch):
+    monkeypatch.setattr("rawg_client.fetch_games", fake_fetch_games)
+
+def fake_fetch_games_multiple():
+    test_games = [{"id": 1, "name": "test_game",  "genres": [{"name": "Action"}, {"name": "RPG"}], "released": "2024-04-04", "rating": 4.5}, 
+                  {"id": 2, "name": "test_game2",  "genres": [{"name": "Sports"}, {"name": "Adventure"}], "released": "2025-05-05", "rating": 4.4}]
+    test_data = {"results": test_games}
+    return test_data
