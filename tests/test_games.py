@@ -26,3 +26,17 @@ def test_filtering_by_genre(client, mock_rawg_response, monkeypatch):
     test_game = client.get("/games/", params={"genre": "Sports"})
     assert len(test_game.json()) == 1
     assert "Sports" in test_game.json()[0]["genre"]
+
+def test_filtering_by_min_rating(client, mock_rawg_response, monkeypatch):
+    monkeypatch.setattr("rawg_client.fetch_games", fake_fetch_games_multiple)
+    client.post("/games/sync")
+    test_game = client.get("/games/", params={"min_rating": 4.45})
+    assert len(test_game.json()) == 1
+    assert test_game.json()[0]["rawg_rating"] == 4.5
+
+def test_filtering_by_year(client, mock_rawg_response, monkeypatch):
+    monkeypatch.setattr("rawg_client.fetch_games", fake_fetch_games_multiple)
+    client.post("/games/sync")
+    test_game = client.get("/games/", params={"year": "2025"})
+    assert len(test_game.json()) == 1
+    assert "2025" in test_game.json()[0]["release_date"]
