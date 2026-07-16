@@ -3,6 +3,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from database import Base, engine, get_db
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from jose import jwt, JWTError
+from config import settings
 import auth
 import schemas
 import models
@@ -29,7 +31,29 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if find_user is None or not auth.verify_password(form_data.password, find_user.hashed_password):
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "Email or password are incorrect")
     access_token = auth.create_access_token(find_user.id)
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = auth.create_refresh_token(find_user.id)
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+@app.post("/refresh/", response_model = schemas.Token)
+def refresh(token_in: schemas.RefreshTokenCreate, db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "Could not validate credentials")
+    try:
+        payload = jwt.decode(token_in.refresh_token, settings.secret_key, algorithms = [auth.ALGORITHM])
+        token_type: str = payload.get("type")
+        if token_type != "refresh":
+            raise credentials_exception
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    if user is None:
+        raise credentials_exception
+    access_token = auth.create_access_token(user.id)
+    refresh_token = auth.create_refresh_token(user.id)
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
 
 @app.post("/games/sync")
 def games(db: Session = Depends(get_db)):

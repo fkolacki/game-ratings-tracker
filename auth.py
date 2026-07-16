@@ -10,6 +10,7 @@ import models
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+REFRESH_TOKEN_EXPIRE_DAYS = 14
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
@@ -23,13 +24,21 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(user_id: int) -> str:
     exp = datetime.now() + timedelta(minutes = ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(user_id), "exp": exp}
-    return  jwt.encode(payload, settings.secret_key, algorithm = ALGORITHM)
+    payload = {"sub": str(user_id), "type": "access", "exp": exp}
+    return jwt.encode(payload, settings.secret_key, algorithm = ALGORITHM)
+
+def create_refresh_token(user_id: int) -> str:
+    exp = datetime.now() + timedelta(days = REFRESH_TOKEN_EXPIRE_DAYS)
+    payload = {"sub": str(user_id), "type": "refresh", "exp": exp}
+    return jwt.encode(payload, settings.secret_key, algorithm = ALGORITHM)
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> models.User:
     credentials_exception = HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "Could not validate credentials")
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms = [ALGORITHM])
+        token_type: str = payload.get("type")
+        if token_type != "access":
+            raise credentials_exception
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
