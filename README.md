@@ -6,7 +6,7 @@ This project was a way to practice writing real backend logic myself: a proper m
 
 ## What it does
 
-- Register / log in (JWT auth, passwords hashed with bcrypt)
+- Register / log in (JWT auth with access + refresh tokens, passwords hashed with bcrypt)
 - Pull games from RAWG and store them locally, so you're not hitting the external API on every request
 - Add games to your own list, with a status and an optional rating
 - Update the status/rating later
@@ -81,21 +81,24 @@ Tests use a separate database from the one the app runs on, and each test starts
 
 **Auth**
 - `POST /register/`: create an account
-- `POST /login/`: log in, get a JWT back
+- `POST /login/`: log in, get a JWT access token + refresh token back
+- `POST /refresh/`: exchange a valid refresh token for a new access + refresh token pair
 
 **Games**
 - `POST /games/sync`: pull games from RAWG into the local DB (updates existing ones instead of duplicating them)
-- `GET /games/`: list games, optionally filter by `genre`, `min_rating`, `year`
+- `GET /games/`: list games, optionally filter by `genre`, `min_rating`, `year`, paginated with `skip`/`limit`
 
 **My list** (all of these need a valid token)
 - `POST /me/games/{game_id}/`: add a game to your list
-- `GET /me/games/`: see your list
+- `GET /me/games/`: see your list, paginated with `skip`/`limit`
 - `PATCH /me/games/{game_id}/`: update status/rating
 - `GET /me/stats/`: summary stats (total games, count per status, average rating)
 
 ## A couple of things worth explaining
 
 **Why `/games/sync` doesn't create duplicates.** It checks if a game with that `rawg_id` already exists before deciding to insert or update. So you can call it as many times as you want without ending up with the same game twice.
+
+**Why tests mock the RAWG API instead of calling it for real.** Tests use `monkeypatch` to replace `rawg_client.fetch_games` with fake data. This keeps tests fast, deterministic, and independent of RAWG's actual API being up or rate-limiting requests.
 
 **Why `UserGame` is a full model and not just a join table.** It needs to hold more than just the two foreign keys. Status, rating, and timestamp all live on that row.
 
@@ -107,10 +110,8 @@ Tests use a separate database from the one the app runs on, and each test starts
 
 ## Next steps
 
-- More test coverage - right now only auth is tested, games and the user's list endpoints still need it
 - Caching frequently-requested game listings with Redis instead of hitting Postgres every time
-- Pagination on the list endpoints
-- Refresh tokens
+- **(Right now)** Learning JavaScript to build a simple front-end for the API instead of only using Swagger docs
 - Actually deploying it somewhere instead of just running it locally
 
 ## Note
